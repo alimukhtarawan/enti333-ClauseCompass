@@ -113,7 +113,7 @@ const flexibilitySchema = z.object({
   excerpt: excerptSchema,
 });
 
-const extractedContractSchema: z.ZodType<ExtractedContract> = z.object({
+const extractedContractSchema = z.object({
   scopeFlag: z.enum(["in_scope", "out_of_scope"]),
   scopeReason: z.string().nullable().optional().transform((v) => v ?? undefined),
   termination: nullable(terminationSchema, terminationDefault as any),
