@@ -12,7 +12,7 @@ const ReqSchema = z.object({
   contractText: z
     .string()
     .min(200, "contract_text_too_short")
-    .max(20000, "contract_text_too_long"),
+    .max(100000, "contract_text_too_long"),
   title: z.string().optional(),
 });
 

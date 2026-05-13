@@ -36,11 +36,11 @@ export default function AnalyzePage() {
           `Only ${extracted.length} characters extracted from "${file.name}". This may be a scanned PDF — please paste the text manually.`
         );
       }
-      const trimmed = extracted.slice(0, 20000);
+      const trimmed = extracted.slice(0, 100000);
       setText(trimmed);
-      if (extracted.length > 20000) {
+      if (extracted.length > 100000) {
         setError(
-          `Extracted ${extracted.length.toLocaleString()} characters from "${file.name}"; only the first 20,000 will be analyzed. Edit the text below if you need to keep different sections.`
+          `Extracted ${extracted.length.toLocaleString()} characters from "${file.name}"; only the first 100,000 will be analyzed. Edit the text below if you need to keep different sections.`
         );
       }
       if (!title) setTitle(file.name.replace(/\.[^.]+$/, ""));
@@ -146,13 +146,13 @@ export default function AnalyzePage() {
         placeholder="Paste full contract text here, or use the upload button above…"
       />
       <div className="mt-1 text-xs text-slate-500 text-right">
-        {text.length}/20000
+        {text.length.toLocaleString()}/100,000
       </div>
 
       <div className="mt-4 flex items-center gap-3">
         <button
           onClick={onAnalyze}
-          disabled={loading || tooShort || text.length > 20000}
+          disabled={loading || tooShort || text.length > 100000}
           className="btn-primary"
         >
           {loading ? STAGES[stage] : "Analyze contract"}
