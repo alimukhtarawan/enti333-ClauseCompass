@@ -191,9 +191,9 @@ function tryParseJson(raw: string): unknown {
 
 export class LLMOverloadedError extends Error {}
 
-// gemini-1.5-flash is 404 on the v1beta endpoint used by this SDK version.
-// gemini-2.0-flash-lite is the lightest free-tier model and rarely overloaded.
-const MODEL_CHAIN = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"] as const;
+// gemini-2.0-flash-lite was retired and is no longer available to new users.
+// Fall back from 2.5-flash → 2.0-flash if the primary is overloaded.
+const MODEL_CHAIN = ["gemini-2.5-flash", "gemini-2.0-flash"] as const;
 
 function isOverload(err: unknown): boolean {
   const s = String(err);
