@@ -41,8 +41,11 @@ export default function ContractReportPage() {
     );
   }
 
-  const allHits = report.categories
-    .flatMap((c) => c.hits)
+  const categories = report.categories ?? [];
+  const summaryText = report.summary ?? "";
+  const questions = report.questionsForLawyer ?? [];
+  const allHits = categories
+    .flatMap((c) => c.hits ?? [])
     .sort(
       (a, b) =>
         SEVERITY_ORDER[b.severity] - SEVERITY_ORDER[a.severity] || b.points - a.points
@@ -64,12 +67,12 @@ export default function ContractReportPage() {
 
       <section className="card p-6 mt-6">
         <h2 className="text-lg font-semibold mb-4">Category breakdown</h2>
-        <CategoryBarChart categories={report.categories} />
+        <CategoryBarChart categories={categories} />
       </section>
 
       <section className="mt-6">
         <h2 className="text-lg font-semibold">Summary</h2>
-        {report.summary.split("\n\n").map((p, i) => (
+        {summaryText.split("\n\n").map((p, i) => (
           <p key={i} className="mt-2 text-slate-700 leading-relaxed">
             {p}
           </p>
@@ -93,14 +96,14 @@ export default function ContractReportPage() {
 
       <AIComparisonPanel
         report={report}
-        contractText={report.rawText}
+        contractText={report.rawText ?? ""}
         initial={report.aiComparison}
       />
 
       <section className="mt-8 card p-6">
         <h2 className="text-lg font-semibold">Questions for your Alberta employment lawyer</h2>
         <ol className="mt-3 list-decimal list-inside space-y-2 text-sm text-slate-700">
-          {report.questionsForLawyer.map((q, i) => (
+          {questions.map((q, i) => (
             <li key={i}>{q}</li>
           ))}
         </ol>

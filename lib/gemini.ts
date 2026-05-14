@@ -189,36 +189,73 @@ function tryParseJson(raw: string): unknown {
   }
 }
 
-export async function extractContract(text: string): Promise<ExtractedContract> {
+export class LLMOverloadedError extends Error {}
+
+const MODEL_CHAIN = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"] as const;
+
+function isOverload(err: unknown): boolean {
+  const s = String(err);
+  return /\b(503|502|429|UNAVAILABLE|overloaded|high demand|rate limit|quota)\b/i.test(s);
+}
+
+function isTransient(err: unknown): boolean {
+  const s = String(err);
+  return (
+    isOverload(err) ||
+    /Empty model response|No JSON object|fetch failed|ECONNRESET|ETIMEDOUT|network/i.test(s)
+  );
+}
+
+async function callOnce(
+  modelName: string,
+  text: string
+): Promise<ExtractedContract> {
   const model = client.getGenerativeModel({
-    model: "gemini-2.5-flash",
+    model: modelName,
     systemInstruction: EXTRACT_SYSTEM_PROMPT,
     generationConfig: {
       temperature: 0.1,
-      maxOutputTokens: 4096,
+      maxOutputTokens: 8192,
       responseMimeType: "application/json",
     },
   });
-
   const userMessage = `CONTRACT TEXT:\n<<<\n${text}\n>>>\n\nReturn the JSON object now.`;
+  const r = await model.generateContent(userMessage);
+  const raw = stripFences(r.response.text() ?? "");
+  if (!raw) {
+    const finish = r.response?.candidates?.[0]?.finishReason;
+    throw new Error(`Empty model response (finishReason=${finish ?? "unknown"})`);
+  }
+  const parsed = tryParseJson(raw);
+  return extractedContractSchema.parse(parsed);
+}
 
-  const attempt = async () => {
-    const r = await model.generateContent(userMessage);
-    const raw = stripFences(r.response.text() ?? "");
-    if (!raw) throw new Error("Empty model response");
-    const parsed = tryParseJson(raw);
-    return extractedContractSchema.parse(parsed);
-  };
-
+export async function extractContract(text: string): Promise<ExtractedContract> {
   let lastErr: unknown;
-  for (let i = 0; i < 2; i++) {
-    try {
-      return await attempt();
-    } catch (e) {
-      lastErr = e;
-      // brief delay before retry
-      await new Promise((res) => setTimeout(res, 400));
+  for (const modelName of MODEL_CHAIN) {
+    // Up to 3 attempts per model with exponential backoff (350ms, 1.4s, 4s)
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await callOnce(modelName, text);
+      } catch (e) {
+        lastErr = e;
+        if (!isTransient(e)) {
+          // Permanent error (e.g., schema mismatch) — try next model once, but
+          // don't burn retries on the same model.
+          break;
+        }
+        const delay = 350 * Math.pow(4, attempt);
+        await new Promise((res) => setTimeout(res, delay));
+      }
     }
+    // If the last error from this model wasn't an overload, drop straight to
+    // surfacing it — switching models won't help with a content/format issue.
+    if (!isOverload(lastErr)) break;
+  }
+  if (isOverload(lastErr)) {
+    throw new LLMOverloadedError(
+      "Gemini is currently overloaded. Please wait a moment and try again."
+    );
   }
   throw new LLMSchemaError(String(lastErr));
 }

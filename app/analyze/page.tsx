@@ -70,6 +70,10 @@ export default function AnalyzePage() {
         const body = await res.json().catch(() => ({}));
         if (res.status === 400 && body?.error === "out_of_scope") {
           setError("This document does not appear to be an Alberta employment contract.");
+        } else if (res.status === 503 || body?.error === "llm_overloaded") {
+          setError(
+            "Gemini is busy right now and we couldn't get an extraction after a few retries. Please try again in 30–60 seconds."
+          );
         } else if (res.status === 502) {
           setError(
             "The AI extraction service returned an error. " +

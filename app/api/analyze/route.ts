@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { extractContract, LLMSchemaError } from "@/lib/gemini";
+import { extractContract, LLMSchemaError, LLMOverloadedError } from "@/lib/gemini";
 import { scoreContract } from "@/lib/scoring";
 import { templateSummary } from "@/lib/summary";
 import type { OverallReport } from "@/lib/types";
@@ -49,6 +49,11 @@ export async function POST(req: NextRequest) {
     };
     return NextResponse.json(report);
   } catch (e) {
+    if (e instanceof LLMOverloadedError)
+      return NextResponse.json(
+        { error: "llm_overloaded", message: e.message },
+        { status: 503 }
+      );
     if (e instanceof LLMSchemaError)
       return NextResponse.json({ error: "llm_failure", message: e.message }, { status: 502 });
     return NextResponse.json({ error: "llm_failure", message: String(e) }, { status: 502 });
