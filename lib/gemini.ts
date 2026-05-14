@@ -191,11 +191,18 @@ function tryParseJson(raw: string): unknown {
 
 export class LLMOverloadedError extends Error {}
 
-const MODEL_CHAIN = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"] as const;
+// gemini-1.5-flash is 404 on the v1beta endpoint used by this SDK version.
+// gemini-2.0-flash-lite is the lightest free-tier model and rarely overloaded.
+const MODEL_CHAIN = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"] as const;
 
 function isOverload(err: unknown): boolean {
   const s = String(err);
-  return /\b(503|502|429|UNAVAILABLE|overloaded|high demand|rate limit|quota)\b/i.test(s);
+  return /\b(503|429|UNAVAILABLE|overloaded|high demand|rate.?limit|quota)\b/i.test(s);
+}
+
+function isNotFound(err: unknown): boolean {
+  const s = String(err);
+  return /\b404\b|not found|not supported for generateContent/i.test(s);
 }
 
 function isTransient(err: unknown): boolean {
@@ -239,22 +246,24 @@ export async function extractContract(text: string): Promise<ExtractedContract> 
         return await callOnce(modelName, text);
       } catch (e) {
         lastErr = e;
+        // 404 = model unavailable in this API version → skip straight to next model
+        if (isNotFound(e)) break;
         if (!isTransient(e)) {
-          // Permanent error (e.g., schema mismatch) — try next model once, but
-          // don't burn retries on the same model.
+          // Permanent error (e.g., schema mismatch) — don't burn retries on this model.
           break;
         }
         const delay = 350 * Math.pow(4, attempt);
         await new Promise((res) => setTimeout(res, delay));
       }
     }
-    // If the last error from this model wasn't an overload, drop straight to
-    // surfacing it — switching models won't help with a content/format issue.
-    if (!isOverload(lastErr)) break;
+    // If the last error wasn't overload/not-found, switching models won't help.
+    if (!isOverload(lastErr) && !isNotFound(lastErr)) break;
   }
   if (isOverload(lastErr)) {
     throw new LLMOverloadedError(
-      "Gemini is currently overloaded. Please wait a moment and try again."
+      "All Gemini models are currently rate-limited or overloaded. " +
+      "This is common on the free API tier. Please wait 30–60 seconds and try again, " +
+      "or consider upgrading your Gemini API to a paid tier for higher limits."
     );
   }
   throw new LLMSchemaError(String(lastErr));
