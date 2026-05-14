@@ -41,7 +41,7 @@ export default function PortfolioPage() {
             <tr>
               <th className="px-4 py-3 font-medium text-slate-700">Title</th>
               <th className="px-4 py-3 font-medium text-slate-700">Source</th>
-              <th className="px-4 py-3 font-medium text-slate-700">Overall</th>
+              <th className="px-4 py-3 font-medium text-slate-700">Risk Level</th>
               <th className="px-4 py-3 font-medium text-slate-700">Top category</th>
               <th className="px-4 py-3 font-medium text-slate-700">Top red flag</th>
             </tr>
