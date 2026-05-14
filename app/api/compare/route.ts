@@ -11,6 +11,8 @@ export const runtime = "nodejs";
 const ReqSchema = z.object({
   contractText: z.string().min(200).max(20000),
   reportId: z.string().optional(),
+  // Pre-computed extraction from the analyze step — avoids a redundant second Gemini call
+  extractedData: z.any().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -32,6 +34,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "not_found" }, { status: 404 });
       }
       extracted = seed.precomputed.extracted;
+    } else if (body.extractedData) {
+      // Use the client-supplied extraction (originally computed server-side during analyze).
+      // scoreContract() re-derives all scoring server-side, so no client-supplied
+      // citations or rules reach the HireGuard column.
+      extracted = body.extractedData as ExtractedContract;
     } else {
       extracted = await extractContract(body.contractText);
     }

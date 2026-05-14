@@ -25,10 +25,23 @@ export function AIComparisonPanel({
     fetch("/api/compare", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contractText, reportId: report.id }),
+      body: JSON.stringify({
+        contractText,
+        reportId: report.id,
+        // Pass the already-computed extraction so the server skips a second Gemini call
+        extractedData: report.extracted ?? null,
+      }),
     })
-      .then((r) => r.json())
-      .then(setComparison)
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok) {
+          throw new Error(data.message ?? `Server error ${r.status}`);
+        }
+        if (!Array.isArray(data?.providers)) {
+          throw new Error("Unexpected response shape from comparison service");
+        }
+        setComparison(data);
+      })
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
   }, [report.id, initial, contractText, report.source]);
@@ -46,7 +59,7 @@ export function AIComparisonPanel({
         </p>
       )}
       {error && <p className="text-sm text-red-600 mt-4">Comparison failed: {error}</p>}
-      {comparison && (
+      {comparison && Array.isArray(comparison.providers) && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
           {comparison.providers.map((p) => (
             <ProviderColumn key={p.provider} opinion={p} />
