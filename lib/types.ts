@@ -89,6 +89,7 @@ export interface CategoryScore {
   score: number;
   band: ScoreBand;
   hits: RuleHit[];
+  missing: boolean;
 }
 
 export type ComparisonProvider = "chatgpt" | "geminiRaw" | "hireguard";

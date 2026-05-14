@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import "./globals.css";
 import Link from "next/link";
 import { DisclaimerBanner } from "@/components/disclaimer-banner";
@@ -14,15 +15,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="min-h-screen flex flex-col">
         <DisclaimerBanner />
-        <header className="border-b border-slate-200 bg-white">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-            <Link href="/" className="font-bold text-xl text-brand-dark">
-              HireGuard
+        <header className="border-b border-slate-200 bg-white shadow-sm">
+          <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-3">
+              <Image
+                src="/hireguard-logo.png"
+                alt="HireGuard"
+                width={160}
+                height={44}
+                className="h-10 w-auto"
+                priority
+              />
             </Link>
-            <nav className="flex gap-5 text-sm">
-              <Link href="/portfolio" className="hover:text-brand">Portfolio</Link>
-              <Link href="/analyze" className="hover:text-brand">Analyze</Link>
-              <Link href="/about" className="hover:text-brand">About</Link>
+            <nav className="flex gap-6 text-sm font-medium">
+              <Link href="/portfolio" className="text-slate-600 hover:text-brand transition-colors">
+                Portfolio
+              </Link>
+              <Link href="/analyze" className="text-slate-600 hover:text-brand transition-colors">
+                Analyze
+              </Link>
+              <Link href="/about" className="text-slate-600 hover:text-brand transition-colors">
+                About
+              </Link>
             </nav>
           </div>
         </header>

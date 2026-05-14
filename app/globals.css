@@ -20,8 +20,16 @@ html, body {
   .btn-primary {
     @apply btn bg-brand text-white hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed;
   }
+  .btn-gold {
+    @apply btn text-white disabled:opacity-50 disabled:cursor-not-allowed;
+    background-color: #c8921a;
+  }
+  .btn-gold:hover {
+    background-color: #a87510;
+  }
   .btn-secondary {
-    @apply btn bg-white text-slate-900 border border-slate-300 hover:bg-slate-50;
+    @apply btn bg-white border border-slate-300 hover:bg-slate-50;
+    color: #1a3060;
   }
   .card {
     @apply bg-white border border-slate-200 rounded-lg shadow-sm;
